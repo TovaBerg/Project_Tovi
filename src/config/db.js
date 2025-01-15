@@ -1,14 +1,15 @@
 // קובץ חיבור למסד הנתונים MongoDB
 const mongoose = require('mongoose');
 
-const connectDB = async () => {
+const connectDB = async (req, res, next) => {
   try {
-    // חיבור למסד הנתונים עם URI מתוך משתני הסביבה
-    await mongoose.connect(process.env.MONGO_URI); // אין צורך בפרמטרים הישנים
-    console.log('MongoDB Connected...'); // הודעה במקרה של הצלחה
+    // ניסיון חיבור למסד הנתונים
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log('MongoDB Connected...');
+    next(); // מעבר ל-Middleware הבא אם החיבור הצליח
   } catch (err) {
-    console.error(`MongoDB connection error: ${err.message}`); // הודעת שגיאה מפורטת
-    process.exit(1); // יציאה מהתהליך עם שגיאה
+    // העברת השגיאה ל-Middleware לטיפול בשגיאות
+    next(new Error('חיבור למסד הנתונים נכשל. בדוק את הגדרות ה-MongoDB שלך.'));
   }
 };
 

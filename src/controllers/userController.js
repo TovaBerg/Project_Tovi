@@ -10,46 +10,63 @@ const generateToken = (id) => {
 };
 
 // רישום משתמש חדש
-const registerUser = async (req, res) => {
+const registerUser = async (req, res, next) => {
   const { username, email, password } = req.body;
 
   try {
     // בדיקה אם המשתמש כבר קיים
     const userExists = await User.findOne({ email });
-    if (userExists) return res.status(400).json({ error: { message: 'User already exists' } });
+    if (userExists) {
+      const error = new Error('User already exists');
+      error.statusCode = 400; // סטטוס 400 - בקשה לא חוקית
+      return next(error); // העברת השגיאה לטיפול
+    }
 
     // יצירת משתמש חדש
     const user = await User.create({ username, email, password });
+
+    // תגובה עם פרטי המשתמש והטוקן
     res.status(201).json({ username: user.username, token: generateToken(user._id) });
   } catch (err) {
-    res.status(500).json({ error: { message: err.message } }); // טיפול בשגיאות שרת
+    next(err); // העברת השגיאה לטיפול ב-Error Handler
   }
 };
 
+
 // התחברות משתמש קיים
-const loginUser = async (req, res) => {
+const loginUser = async (req, res, next) => {
   const { email, password } = req.body;
 
   try {
-    const user = await User.findOne({ email }); // חיפוש משתמש לפי דוא"ל
-    if (user && (await bcrypt.compare(password, user.password))) { // השוואת סיסמאות
+    // חיפוש משתמש לפי דוא"ל
+    const user = await User.findOne({ email });
+
+    // בדיקת פרטי ההתחברות
+    if (user && (await bcrypt.compare(password, user.password))) {
       res.json({ username: user.username, token: generateToken(user._id) });
     } else {
-      res.status(401).json({ error: { message: 'Invalid credentials' } }); // טיפול במקרה של פרטי התחברות לא תקינים
+      const error = new Error('Invalid credentials'); // שגיאה עבור פרטי התחברות שגויים
+      error.statusCode = 401; // סטטוס 401 - גישה לא מורשית
+      return next(error); // העברת השגיאה לטיפול
     }
   } catch (err) {
-    res.status(500).json({ error: { message: err.message } }); // טיפול בשגיאות שרת
+    next(err); // העברת השגיאה לטיפול ב-Error Handler
   }
 };
 
+
 // קבלת כל המשתמשים (מיועד למנהל בלבד)
-const getUsers = async (req, res) => {
+const getUsers = async (req, res, next) => {
   try {
-    const users = await User.find(); // שליפת כל המשתמשים ממסד הנתונים
+    // שליפת כל המשתמשים ממסד הנתונים
+    const users = await User.find();
+
+    // החזרת המשתמשים בתגובה
     res.json(users);
   } catch (err) {
-    res.status(500).json({ error: { message: err.message } }); // טיפול בשגיאות שרת
+    next(err); // העברת השגיאה לטיפול ב-Error Handler
   }
 };
+
 
 module.exports = { registerUser, loginUser, getUsers }; // ייצוא הפונקציות

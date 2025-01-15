@@ -11,13 +11,15 @@ const categoryRoutes = require('./routes/categoryRoutes');
 // טעינת משתני סביבה
 dotenv.config();
 
-// חיבור למסד הנתונים
- connectDB();
-
+ // יצירת מופע של האפליקציה
 const app = express();
 
 // Middleware לקריאת בקשות בפורמט JSON
 app.use(express.json());
+
+
+// מסלול ייעודי לבדיקה וחיבור למסד הנתונים
+app.get('/api/connect', connectDB); // קריאה לפונקציה שמתחברת למסד
 
 // הגדרת ניתובים לפי ישויות
 app.use('/api/users', userRoutes);
